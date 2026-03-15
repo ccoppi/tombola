@@ -1,106 +1,374 @@
 <!DOCTYPE html>
+
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tombola Mobile</title>
-    <style>
-        :root { --primary: #d32f2f; --bg: #1a1a1a; --card: #2d2d2d; --text: #eee; }
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; height: 100vh; box-sizing: border-box; }
-        
-        /* Area Numero Estratto */
-        .estrazione-container { width: 100%; text-align: center; margin-bottom: 15px; }
-        #ultimo-estratto { font-size: 100px; font-weight: 900; color: var(--primary); line-height: 1; margin: 10px 0; text-shadow: 0 0 20px rgba(211, 47, 47, 0.3); }
-        
-        .controlli { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        button { background: var(--primary); color: white; border: none; padding: 15px 25px; font-size: 18px; border-radius: 12px; font-weight: bold; cursor: pointer; flex-grow: 1; max-width: 200px; }
-        .btn-reset { background: #444; width: 60px; flex-grow: 0; }
-        button:active { transform: scale(0.95); }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>🎄 Tombola</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* Griglia Tabellone per Decine */
-        .tabellone { width: 100%; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; background: #000; padding: 5px; border-radius: 8px; overflow-y: auto; }
-        .cella { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: var(--card); font-size: 12px; border-radius: 4px; color: #555; transition: 0.3s; border: 1px solid #3d3d3d; }
-        .cella.estratto { background: var(--primary); color: white; font-weight: bold; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); border-color: transparent; }
-        
-        /* Evidenzia l'ultimo in modo speciale nel tabellone */
-        .cella.ultimo { background: #ffeb3b; color: #000; transform: scale(1.1); z-index: 2; }
+```
+body {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0f0c29, #1a1a4e, #24243e);
+  font-family: 'Nunito', sans-serif;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 12px 40px;
+  -webkit-tap-highlight-color: transparent;
+}
 
-        @media (max-width: 400px) {
-            #ultimo-estratto { font-size: 80px; }
-            .cella { font-size: 10px; }
-        }
-    </style>
+/* HEADER */
+#header { text-align: center; margin-bottom: 12px; }
+#remaining { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+
+/* CERCHIO PRINCIPALE */
+#ball {
+  width: 155px; height: 155px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #2a2a6e 0%, #1a1a4e 100%);
+  border: 3px solid #f5c842;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  user-select: none;
+}
+#ball.idle { background: radial-gradient(circle, #2a2a6e 0%, #1a1a4e 100%); }
+#ball.animating {
+  background: radial-gradient(circle, #f5c842 0%, #e8a000 100%);
+  transform: scale(1.08);
+  box-shadow: 0 0 40px rgba(245,200,66,0.8), 0 0 80px rgba(245,200,66,0.4);
+}
+#ball.has-number {
+  background: radial-gradient(circle, #f5c842 0%, #e8a000 100%);
+  box-shadow: 0 0 30px rgba(245,200,66,0.5);
+}
+#ball.finished {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.15);
+  cursor: default;
+  box-shadow: none;
+}
+#ball-number { font-size: 56px; font-weight: bold; color: #1a1a4e; line-height: 1; }
+#ball-label { font-size: 10px; color: rgba(26,26,78,0.7); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+#ball-hint { font-size: 12px; color: rgba(255,255,255,0.7); letter-spacing: 1px; text-align: center; }
+#ball-emoji { font-size: 30px; margin-bottom: 6px; }
+#ball-finished { font-size: 13px; color: rgba(255,255,255,0.5); text-align: center; padding: 8px; line-height: 1.5; }
+
+/* PULSANTI */
+#controls { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; justify-content: center; }
+
+.btn {
+  border: none; border-radius: 24px;
+  padding: 12px 24px; font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.96); }
+
+#btn-estrai {
+  background: linear-gradient(135deg, #f5c842, #e8a000);
+  color: #1a1a4e; font-weight: bold;
+  box-shadow: 0 4px 16px rgba(245,200,66,0.3);
+  letter-spacing: 0.5px;
+}
+#btn-estrai:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+#btn-history {
+  background: rgba(255,255,255,0.08); color: #fff;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+}
+#btn-reset {
+  background: rgba(255,80,80,0.12); color: #ff6b6b;
+  border: 1px solid rgba(255,80,80,0.25) !important;
+  padding: 12px 18px;
+}
+
+/* STORICO */
+#history-panel {
+  display: none;
+  background: rgba(255,255,255,0.06);
+  border-radius: 16px; padding: 14px 16px;
+  margin-bottom: 18px;
+  width: 100%; max-width: 440px;
+}
+#history-panel.visible { display: block; }
+#history-title {
+  font-size: 10px; color: rgba(255,255,255,0.4);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;
+}
+#history-numbers { display: flex; flex-wrap: wrap; gap: 6px; }
+.hist-num {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px; padding: 3px 9px;
+  font-size: 13px; color: rgba(255,255,255,0.7);
+}
+.hist-num.latest {
+  background: rgba(245,200,66,0.25);
+  border-color: rgba(245,200,66,0.5);
+  color: #f5c842; font-weight: bold;
+}
+
+/* TABELLONE */
+#board-wrap {
+  background: rgba(255,255,255,0.04);
+  border-radius: 20px; padding: 14px;
+  width: 100%; max-width: 440px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+#board-title {
+  font-size: 10px; color: rgba(255,255,255,0.3);
+  letter-spacing: 3px; text-transform: uppercase;
+  text-align: center; margin-bottom: 10px;
+}
+#board { display: flex; flex-direction: column; gap: 4px; }
+.board-row { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.cell {
+  aspect-ratio: 1;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: normal;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.35);
+  border: 1px solid rgba(255,255,255,0.07);
+  transition: background 0.4s, color 0.4s, box-shadow 0.4s;
+  position: relative; overflow: hidden;
+}
+.cell.extracted {
+  background: rgba(245,200,66,0.15);
+  color: #f5c842; font-weight: bold;
+  border-color: rgba(245,200,66,0.35);
+}
+
+.cell.last {
+  background: linear-gradient(135deg, #f5c842, #e8a000);
+  color: #1a1a4e; font-weight: bold;
+  border: none;
+  box-shadow: 0 0 14px rgba(245,200,66,0.7);
+}
+.cell.last::after { display: none; }
+
+/* LEGENDA */
+#legend { display: flex; gap: 16px; margin-top: 13px; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.legend-label { font-size: 10px; color: rgba(255,255,255,0.4); }
+```
+
+  </style>
 </head>
 <body>
 
-    <div class="estrazione-container">
-        <div id="ultimo-estratto">--</div>
-        <div class="controlli">
-            <button onclick="estraiNumero()">ESTRAI</button>
-            <button class="btn-reset" onclick="resetGioco()">↺</button>
-        </div>
+  <!-- HEADER -->
+
+  <div id="header">
+    <div id="remaining">90 numeri rimasti</div>
+  </div>
+
+  <!-- CERCHIO -->
+
+  <div id="ball" class="idle" onclick="estraiNumero()">
+    <span id="ball-hint">Tocca per<br>estrarre</span>
+    <span id="ball-number" style="display:none"></span>
+    <span id="ball-label" style="display:none">estratto</span>
+    <span id="ball-finished" style="display:none">Tutti i numeri<br>estratti!</span>
+  </div>
+
+  <!-- PULSANTI -->
+
+  <div id="controls">
+    <button class="btn" id="btn-estrai" onclick="estraiNumero()">Estrai</button>
+    <button class="btn" id="btn-history" onclick="toggleHistory()">📋 Estratti (<span id="count">0</span>)</button>
+    <button class="btn" id="btn-reset" onclick="resetGame()">↺</button>
+  </div>
+
+  <!-- STORICO -->
+
+  <div id="history-panel">
+    <div id="history-title">Ordine di estrazione</div>
+    <div id="history-numbers"></div>
+  </div>
+
+  <!-- TABELLONE -->
+
+  <div id="board-wrap">
+    <div id="board-title">Tabellone</div>
+    <div id="board"></div>
+    <div id="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:rgba(255,255,255,0.05)"></div>
+        <span class="legend-label">Da estrarre</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:rgba(245,200,66,0.15);border-color:rgba(245,200,66,0.35)"></div>
+        <span class="legend-label">Estratto</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:linear-gradient(135deg,#f5c842,#e8a000);border:none"></div>
+        <span class="legend-label">Ultimo</span>
+      </div>
     </div>
+  </div>
 
-    <div class="tabellone" id="tabellone">
-        </div>
+  <script>
+    const TOTAL = 90;
+    let extracted = [];
+    let lastNumber = null;
+    let animating = false;
+    let finished = false;
+    let showHistory = false;
 
-<script>
-    let numeriDisponibili = Array.from({length: 90}, (_, i) => i + 1);
-    let numeriEstratti = [];
+    const rows = [
+      [1,2,3,4,5,6,7,8,9,10],
+      [11,12,13,14,15,16,17,18,19,20],
+      [21,22,23,24,25,26,27,28,29,30],
+      [31,32,33,34,35,36,37,38,39,40],
+      [41,42,43,44,45,46,47,48,49,50],
+      [51,52,53,54,55,56,57,58,59,60],
+      [61,62,63,64,65,66,67,68,69,70],
+      [71,72,73,74,75,76,77,78,79,80],
+      [81,82,83,84,85,86,87,88,89,90],
+    ];
 
-    // Inizializza il tabellone visivo
-    function creaTabellone() {
-        const tab = document.getElementById('tabellone');
-        tab.innerHTML = '';
-        for (let i = 1; i <= 90; i++) {
-            const div = document.createElement('div');
-            div.className = 'cella';
-            div.id = `num-${i}`;
-            div.innerText = i;
-            tab.appendChild(div);
-        }
+    // Costruisce il tabellone
+    function buildBoard() {
+      const board = document.getElementById("board");
+      board.innerHTML = "";
+      rows.forEach(row => {
+        const rowEl = document.createElement("div");
+        rowEl.className = "board-row";
+        row.forEach(n => {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.id = "cell-" + n;
+          cell.textContent = n;
+          rowEl.appendChild(cell);
+        });
+        board.appendChild(rowEl);
+      });
+    }
+
+    function updateBoard() {
+      for (let n = 1; n <= TOTAL; n++) {
+        const cell = document.getElementById("cell-" + n);
+        cell.className = "cell";
+        if (n === lastNumber) cell.classList.add("last");
+        else if (extracted.includes(n)) cell.classList.add("extracted");
+      }
+    }
+
+    function updateBall() {
+      const ball = document.getElementById("ball");
+      const hint = document.getElementById("ball-hint");
+      const num = document.getElementById("ball-number");
+      const label = document.getElementById("ball-label");
+      const fin = document.getElementById("ball-finished");
+
+      ball.className = "";
+      hint.style.display = "none";
+      num.style.display = "none";
+      label.style.display = "none";
+      fin.style.display = "none";
+
+      if (finished) {
+        ball.classList.add("finished");
+        fin.style.display = "block";
+      } else if (animating) {
+        ball.classList.add("animating");
+        num.style.display = "block";
+        num.textContent = "…";
+      } else if (lastNumber) {
+        ball.classList.add("has-number");
+        num.style.display = "block";
+        num.textContent = lastNumber;
+        label.style.display = "block";
+      } else {
+        ball.classList.add("idle");
+        hint.style.display = "block";
+      }
+    }
+
+    function updateUI() {
+      const rem = TOTAL - extracted.length;
+      document.getElementById("remaining").textContent =
+        rem > 0 ? rem + " numeri rimasti" : "Fine!";
+      document.getElementById("count").textContent = extracted.length;
+
+      const btnEstrai = document.getElementById("btn-estrai");
+      if (finished || animating) btnEstrai.disabled = true;
+      else btnEstrai.disabled = false;
+
+      // Storico
+      const histNums = document.getElementById("history-numbers");
+      histNums.innerHTML = "";
+      [...extracted].reverse().forEach((n, i) => {
+        const span = document.createElement("span");
+        span.className = "hist-num" + (i === 0 ? " latest" : "");
+        span.textContent = n;
+        histNums.appendChild(span);
+      });
     }
 
     function estraiNumero() {
-        if (numeriDisponibili.length === 0) {
-            alert("Tabellone completo!");
-            return;
-        }
+      if (animating || finished) return;
+      const remaining = [];
+      for (let n = 1; n <= TOTAL; n++) {
+        if (!extracted.includes(n)) remaining.push(n);
+      }
+      if (remaining.length === 0) { finished = true; updateBall(); updateUI(); return; }
 
-        const indice = Math.floor(Math.random() * numeriDisponibili.length);
-        const numero = numeriDisponibili.splice(indice, 1)[0];
-        numeriEstratti.push(numero);
+      const num = remaining[Math.floor(Math.random() * remaining.length)];
+      animating = true;
+      updateBall();
+      updateUI();
 
-        aggiornaUI(numero);
+      setTimeout(() => {
+        lastNumber = num;
+        extracted.push(num);
+        animating = false;
+        if (extracted.length === TOTAL) finished = true;
+        updateBall();
+        updateBoard();
+        updateUI();
+      }, 500);
     }
 
-    function aggiornaUI(ultimo) {
-        // Aggiorna il numerone centrale
-        document.getElementById('ultimo-estratto').innerText = ultimo;
-
-        // Rimuovi classe "ultimo" dal precedente
-        document.querySelectorAll('.cella.ultimo').forEach(el => el.classList.remove('ultimo'));
-
-        // Segna il numero sul tabellone
-        const cella = document.getElementById(`num-${ultimo}`);
-        cella.classList.add('estratto', 'ultimo');
-        
-        // Scroll automatico se necessario (per schermi molto piccoli)
-        cella.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    function toggleHistory() {
+      showHistory = !showHistory;
+      const panel = document.getElementById("history-panel");
+      panel.classList.toggle("visible", showHistory);
     }
 
-    function resetGioco() {
-        if (confirm("Vuoi svuotare il tabellone?")) {
-            numeriDisponibili = Array.from({length: 90}, (_, i) => i + 1);
-            numeriEstratti = [];
-            document.getElementById('ultimo-estratto').innerText = "--";
-            creaTabellone();
-        }
+    function resetGame() {
+      extracted = [];
+      lastNumber = null;
+      animating = false;
+      finished = false;
+      showHistory = false;
+      document.getElementById("history-panel").classList.remove("visible");
+      updateBall();
+      updateBoard();
+      updateUI();
     }
 
-    // Partenza
-    creaTabellone();
-</script>
+    // Init
+    buildBoard();
+    updateUI();
+  </script>
 
 </body>
 </html>
