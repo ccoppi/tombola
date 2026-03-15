@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tombola</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-light: #242836;
+    --border: #2e3345;
+    --text: #e8e6f0;
+    --text-dim: #6b6d7b;
+    --accent: #f59e0b;
+    --accent-glow: rgba(245, 158, 11, 0.25);
+    --extracted: #f59e0b;
+    --extracted-bg: rgba(245, 158, 11, 0.12);
+    --btn-grad-1: #f59e0b;
+    --btn-grad-2: #d97706;
+    --success: #10b981;
+  }
+
+- { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+font-family: ‘DM Sans’, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100dvh;
+display: flex;
+flex-direction: column;
+align-items: center;
+overflow-x: hidden;
+padding: 0 0 env(safe-area-inset-bottom);
+}
+
+/* === HEADER === */
+.header {
+width: 100%;
+text-align: center;
+padding: 20px 16px 12px;
+position: relative;
+}
+.header h1 {
+font-family: ‘Playfair Display’, serif;
+font-weight: 900;
+font-size: 2rem;
+letter-spacing: 0.04em;
+background: linear-gradient(135deg, var(–accent) 0%, #fbbf24 50%, #f97316 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.stats {
+display: flex;
+justify-content: center;
+gap: 20px;
+margin-top: 8px;
+font-size: 0.8rem;
+color: var(–text-dim);
+font-weight: 500;
+}
+.stats span strong {
+color: var(–accent);
+font-weight: 700;
+}
+
+/* === LAST EXTRACTED === */
+.last-number-area {
+width: 100%;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 8px 16px 14px;
+}
+.last-label {
+font-size: 0.7rem;
+text-transform: uppercase;
+letter-spacing: 0.12em;
+color: var(–text-dim);
+margin-bottom: 6px;
+}
+.last-number {
+width: 80px;
+height: 80px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-family: ‘Playfair Display’, serif;
+font-weight: 900;
+font-size: 2.4rem;
+color: var(–bg);
+background: linear-gradient(145deg, #fbbf24, #f59e0b, #d97706);
+box-shadow: 0 0 40px var(–accent-glow), 0 4px 20px rgba(0,0,0,0.4);
+transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+opacity: 0;
+transform: scale(0.5);
+}
+.last-number.visible {
+opacity: 1;
+transform: scale(1);
+}
+.last-number.pop {
+animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes popIn {
+0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* === BOARD === */
+.board-wrapper {
+width: 100%;
+max-width: 460px;
+padding: 0 10px;
+flex: 1;
+}
+.board {
+display: grid;
+grid-template-columns: repeat(10, 1fr);
+gap: 4px;
+width: 100%;
+}
+.cell {
+aspect-ratio: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: 700;
+font-size: 0.85rem;
+border-radius: 8px;
+background: var(–surface);
+border: 1px solid var(–border);
+color: var(–text-dim);
+transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+position: relative;
+cursor: default;
+user-select: none;
+}
+.cell.extracted {
+background: var(–extracted-bg);
+border-color: var(–extracted);
+color: var(–extracted);
+font-weight: 700;
+box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+}
+.cell.extracted.just-now {
+animation: cellPulse 0.6s ease;
+}
+@keyframes cellPulse {
+0% { transform: scale(1); }
+30% { transform: scale(1.2); box-shadow: 0 0 20px var(–accent-glow); }
+100% { transform: scale(1); }
+}
+
+/* Row separators every 10 numbers */
+.cell:nth-child(10n+1) { border-left: 2px solid var(–border); }
+.cell:nth-child(-n+10) { border-top: 2px solid var(–border); }
+
+/* === BUTTON AREA === */
+.action-area {
+width: 100%;
+max-width: 460px;
+padding: 16px 16px 24px;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 10px;
+}
+.extract-btn {
+width: 100%;
+padding: 16px;
+border: none;
+border-radius: 14px;
+font-family: ‘DM Sans’, sans-serif;
+font-size: 1.05rem;
+font-weight: 700;
+letter-spacing: 0.03em;
+color: var(–bg);
+background: linear-gradient(135deg, var(–btn-grad-1), var(–btn-grad-2));
+cursor: pointer;
+position: relative;
+overflow: hidden;
+transition: transform 0.15s ease, box-shadow 0.15s ease;
+box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+.extract-btn:active {
+transform: scale(0.97);
+box-shadow: 0 2px 10px rgba(245, 158, 11, 0.2);
+}
+.extract-btn:disabled {
+background: var(–surface-light);
+color: var(–text-dim);
+box-shadow: none;
+cursor: default;
+}
+.extract-btn .ripple {
+position: absolute;
+border-radius: 50%;
+background: rgba(255,255,255,0.3);
+transform: scale(0);
+animation: ripple 0.5s ease-out;
+pointer-events: none;
+}
+@keyframes ripple {
+to { transform: scale(4); opacity: 0; }
+}
+
+.reset-btn {
+background: none;
+border: 1px solid var(–border);
+color: var(–text-dim);
+font-family: ‘DM Sans’, sans-serif;
+font-size: 0.8rem;
+font-weight: 500;
+padding: 8px 20px;
+border-radius: 8px;
+cursor: pointer;
+transition: all 0.2s ease;
+}
+.reset-btn:active {
+background: var(–surface-light);
+color: var(–text);
+}
+
+/* === END OVERLAY === */
+.end-overlay {
+position: fixed;
+inset: 0;
+background: rgba(15, 17, 23, 0.92);
+backdrop-filter: blur(10px);
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+z-index: 100;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.4s ease;
+}
+.end-overlay.visible {
+opacity: 1;
+pointer-events: auto;
+}
+.end-overlay h2 {
+font-family: ‘Playfair Display’, serif;
+font-size: 2.5rem;
+font-weight: 900;
+background: linear-gradient(135deg, var(–accent), #fbbf24);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+margin-bottom: 8px;
+}
+.end-overlay p {
+color: var(–text-dim);
+font-size: 0.95rem;
+margin-bottom: 24px;
+}
+.end-overlay button {
+padding: 14px 40px;
+border: none;
+border-radius: 12px;
+font-family: ‘DM Sans’, sans-serif;
+font-size: 1rem;
+font-weight: 700;
+color: var(–bg);
+background: linear-gradient(135deg, var(–btn-grad-1), var(–btn-grad-2));
+cursor: pointer;
+box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+
+/* === HISTORY DRAWER === */
+.history-toggle {
+font-size: 0.75rem;
+color: var(–text-dim);
+background: none;
+border: none;
+cursor: pointer;
+padding: 4px 8px;
+font-family: ‘DM Sans’, sans-serif;
+text-decoration: underline;
+text-underline-offset: 3px;
+}
+.history {
+width: 100%;
+max-width: 460px;
+padding: 0 16px;
+overflow: hidden;
+max-height: 0;
+transition: max-height 0.35s ease;
+}
+.history.open { max-height: 200px; }
+.history-inner {
+display: flex;
+flex-wrap: wrap;
+gap: 6px;
+padding: 10px 0 6px;
+justify-content: center;
+}
+.history-chip {
+width: 32px;
+height: 28px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 0.7rem;
+font-weight: 700;
+border-radius: 6px;
+background: var(–surface);
+color: var(–accent);
+border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* === RESPONSIVE === */
+@media (min-width: 480px) {
+.cell { font-size: 1rem; border-radius: 10px; }
+.board { gap: 5px; }
+.header h1 { font-size: 2.4rem; }
+}
+@media (max-width: 360px) {
+.cell { font-size: 0.72rem; border-radius: 6px; }
+.board { gap: 3px; }
+.last-number { width: 68px; height: 68px; font-size: 2rem; }
+}
+</style>
+
+</head>
+<body>
+
+<div class="header">
+  <h1>TOMBOLA</h1>
+  <div class="stats">
+    <span>Estratti: <strong id="countExtracted">0</strong>/90</span>
+    <span>Rimasti: <strong id="countRemaining">90</strong></span>
+  </div>
+</div>
+
+<div class="last-number-area">
+  <div class="last-label">Ultimo estratto</div>
+  <div class="last-number" id="lastNumber">—</div>
+</div>
+
+<div class="board-wrapper">
+  <div class="board" id="board"></div>
+</div>
+
+<button class="history-toggle" id="historyToggle" style="display:none">Ordine di estrazione ▾</button>
+
+<div class="history" id="historyDrawer">
+  <div class="history-inner" id="historyList"></div>
+</div>
+
+<div class="action-area">
+  <button class="extract-btn" id="extractBtn">Estrai numero</button>
+  <button class="reset-btn" id="resetBtn">Ricomincia</button>
+</div>
+
+<div class="end-overlay" id="endOverlay">
+  <h2>Tombola!</h2>
+  <p>Tutti i 90 numeri sono stati estratti.</p>
+  <button onclick="resetGame()">Nuova partita</button>
+</div>
+
+<script>
+  let remaining = [];
+  let extracted = [];
+
+  function init() {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    for (let i = 1; i <= 90; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = 'cell-' + i;
+      cell.textContent = i;
+      board.appendChild(cell);
+    }
+    remaining = Array.from({ length: 90 }, (_, i) => i + 1);
+    extracted = [];
+    updateStats();
+    document.getElementById('lastNumber').classList.remove('visible');
+    document.getElementById('lastNumber').textContent = '—';
+    document.getElementById('extractBtn').disabled = false;
+    document.getElementById('endOverlay').classList.remove('visible');
+    document.getElementById('historyList').innerHTML = '';
+    document.getElementById('historyToggle').style.display = 'none';
+    document.getElementById('historyDrawer').classList.remove('open');
+  }
+
+  function extractNumber() {
+    if (remaining.length === 0) return;
+
+    const idx = Math.floor(Math.random() * remaining.length);
+    const num = remaining.splice(idx, 1)[0];
+    extracted.push(num);
+
+    // Highlight cell
+    const cell = document.getElementById('cell-' + num);
+    cell.classList.add('extracted', 'just-now');
+    setTimeout(() => cell.classList.remove('just-now'), 700);
+
+    // Last number animation
+    const lastEl = document.getElementById('lastNumber');
+    lastEl.textContent = num;
+    lastEl.classList.remove('pop');
+    lastEl.classList.add('visible');
+    void lastEl.offsetWidth; // reflow
+    lastEl.classList.add('pop');
+
+    // History chip
+    const chip = document.createElement('div');
+    chip.className = 'history-chip';
+    chip.textContent = num;
+    document.getElementById('historyList').prepend(chip);
+    document.getElementById('historyToggle').style.display = '';
+
+    updateStats();
+
+    // Scroll to cell on mobile
+    cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    if (remaining.length === 0) {
+      setTimeout(() => {
+        document.getElementById('endOverlay').classList.add('visible');
+      }, 800);
+      document.getElementById('extractBtn').disabled = true;
+    }
+  }
+
+  function updateStats() {
+    document.getElementById('countExtracted').textContent = extracted.length;
+    document.getElementById('countRemaining').textContent = remaining.length;
+  }
+
+  function resetGame() {
+    if (extracted.length > 0 && remaining.length > 0) {
+      if (!confirm('Vuoi davvero ricominciare?')) return;
+    }
+    init();
+  }
+
+  // Ripple effect on button
+  document.getElementById('extractBtn').addEventListener('click', function(e) {
+    const btn = this;
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+    extractNumber();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+  document.getElementById('historyToggle').addEventListener('click', function() {
+    const drawer = document.getElementById('historyDrawer');
+    drawer.classList.toggle('open');
+    this.textContent = drawer.classList.contains('open')
+      ? 'Ordine di estrazione ▴'
+      : 'Ordine di estrazione ▾';
+  });
+
+  // Init
+  init();
+</script>
+
+</body>
+</html>
