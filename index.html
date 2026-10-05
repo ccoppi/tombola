@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Tombola - Arcade Edition</title>
+  <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-card: #151d30;
+      --bg-input: #1e293b;
+      --border: #334155;
+      --border-focus: #475569;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.4);
+      --gold: #f59e0b;
+      --gold-glow: rgba(245, 158, 11, 0.45);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.4);
+      --accent: #e11d48;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-main);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* Header Bar */
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: var(--bg-card);
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+
+    .logo span {
+      color: var(--cyan);
+    }
+
+    .stats-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-input);
+      padding: 3px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      color: var(--cyan);
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .btn-reset {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .btn-reset:active {
+      background: var(--border);
+      color: #fff;
+    }
+
+    /* History Bar */
+    .history-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 2px 0;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+
+    .history-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .history-pill {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      font-family: monospace;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      animation: popIn 0.3s ease;
+      color: #fff;
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--gold);
+      box-shadow: 0 0 6px var(--gold);
+    }
+
+    /* Arena Tabellone */
+    .arena-card {
+      position: relative;
+      flex: 1 1 0;
+      min-height: 200px;
+      background: radial-gradient(circle at center, #162238 0%, #0d1322 80%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    /* Spotlight Ultimo Estratto */
+    .spotlight-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 480px;
+      padding: 0 4px 6px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .spotlight-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .spotlight-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      padding: 2px 10px;
+      border-radius: 14px;
+    }
+
+    .spotlight-number {
+      font-size: 1.25rem;
+      font-weight: 900;
+      font-family: monospace;
+      color: var(--gold);
+      text-shadow: 0 0 10px var(--gold-glow);
+      line-height: 1;
+    }
+
+    /* Griglia 10x9 (90 caselle) */
+    .board-container {
+      width: 100%;
+      max-width: 480px;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+      gap: 3.5px;
+      margin: auto;
+      padding: 4px 0;
+    }
+
+    .cell {
+      background: var(--bg-input);
+      border: 1px solid rgba(51, 65, 85, 0.7);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-family: monospace;
+      color: #64748b;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    @media (hover: hover) {
+      .cell:hover {
+        border-color: #475569;
+        color: #94a3b8;
+      }
+    }
+
+    .cell.extracted {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35));
+      border-color: var(--gold);
+      color: #fff;
+      font-weight: 900;
+      box-shadow: inset 0 0 10px var(--gold-glow), 0 0 8px var(--gold-glow);
+    }
+
+    .cell.just-now {
+      animation: popCell 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #0b0f19;
+      z-index: 5;
+    }
+
+    /* Pannello Controlli */
+    .control-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .action-panel {
+      width: 100%;
+      display: flex;
+    }
+
+    .big-btn {
+      width: 100%;
+      min-height: 64px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1.2rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.15s, background 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      color: #0b0f19;
+      box-shadow: 0 4px 18px var(--cyan-glow);
+    }
+
+    .big-btn:active {
+      transform: scale(0.97);
+    }
+
+    .big-btn:disabled {
+      background: #334155;
+      color: #94a3b8;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-subtitle {
+      font-size: 0.74rem;
+      font-weight: 700;
+      opacity: 0.95;
+    }
+
+    /* Overlay Tombola Completata */
+    .end-banner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border);
+      padding: 16px 28px;
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 20;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.7);
+    }
+
+    .end-banner.active {
+      opacity: 1;
+      pointer-events: auto;
+      animation: popIn 0.3s ease;
+    }
+
+    .end-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .end-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 4px 0 14px;
+    }
+
+    .end-btn {
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      border: none;
+      color: #0b0f19;
+      font-weight: 900;
+      font-size: 0.85rem;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    @keyframes popIn {
+      0% { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    @keyframes popCell {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.35); box-shadow: 0 0 16px var(--gold); }
+      100% { transform: scale(1); }
+    }
+
+    @media (max-width: 380px) {
+      .cell { font-size: 0.72rem; }
+      .board-container { gap: 2px; }
+      .big-btn { min-height: 58px; font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        🎱 <span>TOMBOLA</span> TABELLONE
+      </div>
+      <div class="stats-box">
+        <span>Estratti: <strong class="stat-val" id="countExtracted">0</strong>/90</span>
+        <span>Rimasti: <strong class="stat-val" id="countRemaining">90</strong></span>
+        <button class="btn-reset" id="btnReset" title="Ricomincia estrazione">Azzera</button>
+      </div>
+    </header>
+
+    <!-- History Bar delle ultime estrazioni -->
+    <div class="history-bar" id="historyBar">
+      <div class="history-pill"><span class="pill-dot"></span>In attesa...</div>
+    </div>
+
+    <!-- Arena con Tabellone 90 Numeri -->
+    <div class="arena-card">
+      <div class="spotlight-bar">
+        <span class="spotlight-label">Ultimo Numero</span>
+        <div class="spotlight-badge">
+          <span>ESTRATTO:</span>
+          <span class="spotlight-number" id="lastNumberDisplay">—</span>
+        </div>
+      </div>
+
+      <div class="board-container" id="boardGrid">
+        <!-- 90 caselle generate da JS -->
+      </div>
+
+      <!-- Banner Fine Partita -->
+      <div class="end-banner" id="endBanner">
+        <div class="end-title">TOMBOLA!</div>
+        <div class="end-sub">Tutti i 90 numeri sono stati estratti.</div>
+        <button class="end-btn" onclick="resetGame()">Nuova Partita</button>
+      </div>
+    </div>
+
+    <!-- Controlli Estrazione -->
+    <div class="control-card">
+      <div class="action-panel">
+        <button class="big-btn" id="extractBtn">
+          <span>ESTRAI NUMERO</span>
+          <span class="btn-subtitle">Barra Spazio o Clic</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- AUDIO SINTETIZZATO (Web Audio API nativa) ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playExtractChime(num) {
+      if (!audioCtx) return;
+      try {
+        const now = audioCtx.currentTime;
+
+        // Click di rotolamento pallina
+        const clickOsc = audioCtx.createOscillator();
+        const clickGain = audioCtx.createGain();
+        clickOsc.connect(clickGain);
+        clickGain.connect(audioCtx.destination);
+        clickOsc.type = 'triangle';
+        clickOsc.frequency.setValueAtTime(140, now);
+        clickOsc.frequency.exponentialRampToValueAtTime(40, now + 0.05);
+        clickGain.gain.setValueAtTime(0.12, now);
+        clickGain.gain.linearRampToValueAtTime(0.001, now + 0.05);
+        clickOsc.start(now);
+        clickOsc.stop(now + 0.05);
+
+        // Campana melodica ad accordo
+        const freqs = [440, 554.37, 659.25]; // Accordo A-major brillante
+        freqs.forEach((f, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f + (num % 10) * 15, now + 0.04 + idx * 0.03);
+          gain.gain.setValueAtTime(0.12, now + 0.04 + idx * 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35 + idx * 0.03);
+          osc.start(now + 0.04 + idx * 0.03);
+          osc.stop(now + 0.35 + idx * 0.03);
+        });
+      } catch (e) {}
+    }
+
+    function playTombolaFanfare() {
+      if (!audioCtx) return;
+      try {
+        const now = audioCtx.currentTime;
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.09);
+          gain.gain.setValueAtTime(0.2, now + i * 0.09);
+          gain.gain.linearRampToValueAtTime(0.001, now + i * 0.09 + 0.4);
+          osc.start(now + i * 0.09);
+          osc.stop(now + i * 0.09 + 0.4);
+        });
+      } catch (e) {}
+    }
+
+    // --- LOGICA GIOCO ---
+    let remaining = [];
+    let extracted = [];
+
+    const boardGrid = document.getElementById('boardGrid');
+    const extractBtn = document.getElementById('extractBtn');
+    const btnReset = document.getElementById('btnReset');
+    const countExtractedEl = document.getElementById('countExtracted');
+    const countRemainingEl = document.getElementById('countRemaining');
+    const lastNumberDisplay = document.getElementById('lastNumberDisplay');
+    const historyBar = document.getElementById('historyBar');
+    const endBanner = document.getElementById('endBanner');
+
+    function createBoard() {
+      boardGrid.innerHTML = '';
+      for (let i = 1; i <= 90; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = `cell-${i}`;
+        cell.textContent = i;
+        boardGrid.appendChild(cell);
+      }
+    }
+
+    function init() {
+      createBoard();
+      remaining = Array.from({ length: 90 }, (_, i) => i + 1);
+      extracted = [];
+      updateStats();
+      lastNumberDisplay.textContent = '—';
+      extractBtn.disabled = false;
+      extractBtn.querySelector('span').textContent = 'ESTRAI NUMERO';
+      endBanner.classList.remove('active');
+      historyBar.innerHTML = '<div class="history-pill"><span class="pill-dot"></span>In attesa...</div>';
+    }
+
+    function extractNumber() {
+      if (remaining.length === 0) return;
+      initAudio();
+
+      const idx = Math.floor(Math.random() * remaining.length);
+      const num = remaining.splice(idx, 1)[0];
+      extracted.push(num);
+
+      playExtractChime(num);
+
+      // Aggiorna cella
+      const cell = document.getElementById(`cell-${num}`);
+      cell.classList.add('extracted', 'just-now');
+      setTimeout(() => cell.classList.remove('just-now'), 600);
+
+      // Aggiorna Spotlight
+      lastNumberDisplay.textContent = num;
+
+      // Aggiorna History Bar
+      addHistoryPill(num);
+
+      updateStats();
+
+      // Controllo Tombola Completa
+      if (remaining.length === 0) {
+        extractBtn.disabled = true;
+        extractBtn.querySelector('span').textContent = 'COMPLETATO';
+        playTombolaFanfare();
+        setTimeout(() => {
+          endBanner.classList.add('active');
+        }, 600);
+      }
+    }
+
+    function updateStats() {
+      countExtractedEl.textContent = extracted.length;
+      countRemainingEl.textContent = remaining.length;
+    }
+
+    function addHistoryPill(num) {
+      if (extracted.length === 1) {
+        historyBar.innerHTML = '';
+      }
+      const pill = document.createElement('div');
+      pill.className = 'history-pill';
+
+      const dot = document.createElement('span');
+      dot.className = 'pill-dot';
+
+      const text = document.createTextNode(`#${num}`);
+      pill.appendChild(dot);
+      pill.appendChild(text);
+
+      historyBar.insertBefore(pill, historyBar.firstChild);
+      if (historyBar.children.length > 16) {
+        historyBar.removeChild(historyBar.lastChild);
+      }
+    }
+
+    function resetGame() {
+      if (extracted.length > 0 && remaining.length > 0) {
+        if (!confirm("Vuoi davvero ricominciare una nuova partita?")) return;
+      }
+      init();
+    }
+
+    extractBtn.addEventListener('click', extractNumber);
+    btnReset.addEventListener('click', resetGame);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (!extractBtn.disabled) {
+          extractNumber();
+        }
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
